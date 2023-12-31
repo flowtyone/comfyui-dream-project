@@ -4,7 +4,7 @@ import glob
 from .categories import NodeCategories
 from .shared import *
 from .dreamtypes import *
-
+import folder_paths
 
 class DreamFrameCounterInfo:
     NODE_NAME = "Frame Counter Info"
@@ -43,9 +43,11 @@ class DreamDirectoryFileCount:
 
     @classmethod
     def INPUT_TYPES(cls):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         return {
             "required": {
-                "directory_path": ("STRING", {"default": '', "multiline": False}),
+                "directory_path": (files,),
                 "patterns": ("STRING", {"default": '*.jpg|*.png|*.jpeg', "multiline": False}),
             },
         }
@@ -59,7 +61,15 @@ class DreamDirectoryFileCount:
     def IS_CHANGED(cls, *v):
         return ALWAYS_CHANGED_FLAG
 
+    @classmethod
+    def VALIDATE_INPUTS(s, **kwargs):
+        if not folder_paths.exists_annotated_filepath(kwargs.get("directory_path")):
+            return "Invalid image file: {}".format(kwargs.get("directory_path"))
+
+        return True
+
     def result(self, directory_path, patterns):
+        directory_path = folder_paths.get_annotated_filepath(directory_path)
         if not os.path.isdir(directory_path):
             return (0,)
         total = 0
@@ -156,9 +166,11 @@ class DreamDirectoryBackedFrameCounter:
 
     @classmethod
     def INPUT_TYPES(cls):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         return {
             "required": {
-                "directory_path": ("STRING", {"default": '', "multiline": False}),
+                "directory_path": (files, ),
                 "pattern": ("STRING", {"default": '*', "multiline": False}),
                 "indexing": (["numeric", "alphabetic order"],),
                 "total_frames": ("INT", {"default": 100, "min": 2, "max": 24 * 3600 * 60}),
@@ -175,7 +187,15 @@ class DreamDirectoryBackedFrameCounter:
     def IS_CHANGED(cls, *values):
         return ALWAYS_CHANGED_FLAG
 
+    @classmethod
+    def VALIDATE_INPUTS(s, **kwargs):
+        if not folder_paths.exists_annotated_filepath(kwargs.get("directory_path")):
+            return "Invalid image file: {}".format(kwargs.get("directory_path"))
+
+        return True
+
     def result(self, directory_path, pattern, indexing, total_frames, frames_per_second):
+        directory_path = folder_paths.get_annotated_filepath(directory_path)
         results = list_images_in_directory(directory_path, pattern, indexing == "alphabetic order")
         if not results:
             return (FrameCounter(0, total_frames, frames_per_second),)

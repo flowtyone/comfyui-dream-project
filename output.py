@@ -39,7 +39,7 @@ class DreamImageSequenceOutput:
         return {
             "required": SharedTypes.frame_counter | {
                 "image": ("IMAGE",),
-                "directory_path": ("STRING", {"default": comfy_paths.output_directory, "multiline": False}),
+                #"directory_path": ("STRING", {"default": comfy_paths.output_directory, "multiline": False}),
                 "prefix": ("STRING", {"default": 'frame', "multiline": False}),
                 "digits": ("INT", {"default": 5}),
                 "at_end": (["stop output", "raise error", "keep going"],),

@@ -3,6 +3,7 @@ from .categories import NodeCategories
 from .shared import ALWAYS_CHANGED_FLAG, list_images_in_directory, DreamImage
 from .dreamtypes import SharedTypes, FrameCounter
 import os
+import folder_paths
 
 
 class DreamImageSequenceInputWithDefaultFallback:
@@ -11,9 +12,11 @@ class DreamImageSequenceInputWithDefaultFallback:
 
     @classmethod
     def INPUT_TYPES(cls):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         return {
             "required": SharedTypes.frame_counter | {
-                "directory_path": ("STRING", {"default": '', "multiline": False}),
+                "directory_path": (files,),
                 "pattern": ("STRING", {"default": '*', "multiline": False}),
                 "indexing": (["numeric", "alphabetic order"],)
             },
@@ -31,7 +34,15 @@ class DreamImageSequenceInputWithDefaultFallback:
     def IS_CHANGED(cls, *values):
         return ALWAYS_CHANGED_FLAG
 
+    @classmethod
+    def VALIDATE_INPUTS(s, **kwargs):
+        if not folder_paths.exists_annotated_filepath(kwargs.get("directory_path")):
+            return "Invalid image file: {}".format(kwargs.get("directory_path"))
+
+        return True
+
     def result(self, frame_counter: FrameCounter, directory_path, pattern, indexing, **other):
+        directory_path = folder_paths.get_annotated_filepath(directory_path)
         default_image = other.get("default_image", None)
         entries = list_images_in_directory(directory_path, pattern, indexing == "alphabetic order")
         entry = entries.get(frame_counter.current_frame, None)
